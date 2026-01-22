@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Formulário de Sócios</title>
+    <title>Formulário de Cadastro</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Google Fonts: Poppins -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -67,8 +67,8 @@
             opacity: 0.3;
         }
 
-        /* Cards dos sócios */
-        .socio-card {
+        /* Cards das pessoas */
+        .pessoa-card {
             background: rgba(45, 27, 105, 0.8);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(139, 92, 246, 0.2);
@@ -80,7 +80,7 @@
             overflow: hidden;
         }
 
-        .socio-card::before {
+        .pessoa-card::before {
             content: '';
             position: absolute;
             top: 0;
@@ -90,7 +90,7 @@
             background: linear-gradient(90deg, var(--primary), var(--secondary));
         }
 
-        .socio-card:hover {
+        .pessoa-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 20px 40px rgba(139, 92, 246, 0.3);
             border-color: rgba(139, 92, 246, 0.5);
@@ -196,28 +196,6 @@
             box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3);
         }
 
-        /* Floating labels */
-        .floating-label {
-            position: relative;
-        }
-
-        .floating-label input:focus + label,
-        .floating-label input:not(:placeholder-shown) + label {
-            transform: translateY(-25px) scale(0.85);
-            color: var(--primary);
-        }
-
-        .floating-label label {
-            position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            transition: all 0.3s ease;
-            pointer-events: none;
-            background: var(--dark-card);
-            padding: 0 4px;
-        }
-
         /* Mensagens */
         .message {
             position: fixed;
@@ -251,13 +229,9 @@
             animation: slideIn 0.5s ease;
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-
-        .animate-pulse {
-            animation: pulse 2s infinite;
+        @keyframes slideOut {
+            from { opacity: 1; transform: translateX(0); }
+            to { opacity: 0; transform: translateX(100px); }
         }
 
         /* Responsividade */
@@ -265,7 +239,7 @@
             .header-gradient {
                 padding: 1.5rem;
             }
-            .socio-card {
+            .pessoa-card {
                 padding: 1rem;
             }
         }
@@ -288,8 +262,8 @@
             background: var(--primary-dark);
         }
 
-        /* Contador de sócios */
-        .socio-counter {
+        /* Contador de pessoas */
+        .pessoa-counter {
             background: linear-gradient(135deg, var(--accent), #f97316);
             color: white;
             padding: 0.5rem 1rem;
@@ -310,37 +284,37 @@
         <div class="header-gradient relative">
             <div class="relative z-10">
                 <h1 class="text-3xl sm:text-4xl font-bold text-white text-center mb-2">
-                    👥 Formulário de Sócios
+                    📋 Formulário de Cadastro
                 </h1>
                 <p class="text-center text-slate-200 text-lg">
-                    Gerencie os dados dos sócios e envie via WhatsApp
+                    Gerencie os dados das pessoas e envie via WhatsApp
                 </p>
-                <div class="socio-counter" id="socioCounter">
-                    📊 1 Sócio
+                <div class="pessoa-counter" id="pessoaCounter">
+                    📊 1 Pessoa
                 </div>
             </div>
         </div>
 
         <!-- Conteúdo Principal -->
         <div class="p-6">
-            <form id="formularioSocios">
+            <form id="formularioCadastro">
                 
                 <!-- Controles -->
                 <div class="flex flex-wrap gap-3 mb-6 justify-center">
-                    <button type="button" id="addSocio" class="btn-add">
-                        ➕ Adicionar Sócio
+                    <button type="button" id="addPessoa" class="btn-add">
+                        ➕ Adicionar Pessoa
                     </button>
-                    <button type="button" id="removeSocio" class="btn-remove">
-                        ➖ Remover Último
+                    <button type="button" id="removePessoa" class="btn-remove">
+                        ➖ Remover Última
                     </button>
                     <button type="button" id="modoTeste" class="btn-primary" style="background: linear-gradient(135deg, var(--accent), #f97316);">
                         🧪 Modo Teste
                     </button>
                 </div>
 
-                <!-- Container dos Sócios -->
-                <div id="sociosContainer" class="space-y-4">
-                    <!-- Sócios serão inseridos aqui dinamicamente -->
+                <!-- Container das Pessoas -->
+                <div id="pessoasContainer" class="space-y-4">
+                    <!-- Pessoas serão inseridas aqui dinamicamente -->
                 </div>
 
                 <!-- Botão de Envio -->
@@ -358,7 +332,7 @@
         // CONFIGURAÇÕES
         // =================================================================
         const numeroWhatsApp = '55996636737';
-        let socioCounter = 0;
+        let pessoaCounter = 0;
 
         // =================================================================
         // FUNÇÕES UTILITÁRIAS
@@ -405,8 +379,15 @@
             return cep;
         }
 
+        function formatarCelular(celular) {
+            celular = celular.replace(/\D/g, "");
+            celular = celular.replace(/^(\d{2})(\d)/g, "($1) $2");
+            celular = celular.replace(/(\d{5})(\d)/, "$1-$2");
+            return celular;
+        }
+
         // API ViaCEP
-        async function buscarCEP(cep, socioId) {
+        async function buscarCEP(cep, pessoaId) {
             cep = cep.replace(/\D/g, '');
             if (cep.length !== 8) return;
             
@@ -415,10 +396,10 @@
                 const data = await response.json();
                 
                 if (!data.erro) {
-                    document.getElementById(`logradouro_${socioId}`).value = data.logradouro;
-                    document.getElementById(`bairro_${socioId}`).value = data.bairro;
-                    document.getElementById(`municipio_${socioId}`).value = data.localidade;
-                    document.getElementById(`uf_${socioId}`).value = data.uf;
+                    document.getElementById(`logradouro_${pessoaId}`).value = data.logradouro;
+                    document.getElementById(`bairro_${pessoaId}`).value = data.bairro;
+                    document.getElementById(`municipio_${pessoaId}`).value = data.localidade;
+                    document.getElementById(`uf_${pessoaId}`).value = data.uf;
                     
                     showMessage('CEP encontrado e campos preenchidos!', 'success');
                 } else {
@@ -430,27 +411,27 @@
         }
 
         function atualizarContador() {
-            const total = document.querySelectorAll('.socio-card').length;
-            document.getElementById('socioCounter').textContent = `📊 ${total} Sócio${total !== 1 ? 's' : ''}`;
+            const total = document.querySelectorAll('.pessoa-card').length;
+            document.getElementById('pessoaCounter').textContent = `📊 ${total} Pessoa${total !== 1 ? 's' : ''}`;
         }
 
         // =================================================================
-        // GERENCIAMENTO DE SÓCIOS
+        // GERENCIAMENTO DE PESSOAS
         // =================================================================
-        function adicionarSocio(dados = {}) {
-            socioCounter++;
-            const container = document.getElementById('sociosContainer');
+        function adicionarPessoa(dados = {}) {
+            pessoaCounter++;
+            const container = document.getElementById('pessoasContainer');
             
-            const socioDiv = document.createElement('div');
-            socioDiv.className = 'socio-card animate-slide-in';
-            socioDiv.id = `socio-${socioCounter}`;
+            const pessoaDiv = document.createElement('div');
+            pessoaDiv.className = 'pessoa-card animate-slide-in';
+            pessoaDiv.id = `pessoa-${pessoaCounter}`;
             
-            socioDiv.innerHTML = `
+            pessoaDiv.innerHTML = `
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-xl font-semibold text-white">
-                        👤 Sócio ${socioCounter}
+                        👤 Pessoa ${pessoaCounter}
                     </h3>
-                    <button type="button" class="btn-remove" onclick="removerSocio(${socioCounter})">
+                    <button type="button" class="btn-remove" onclick="removerPessoa(${pessoaCounter})">
                         🗑️ Remover
                     </button>
                 </div>
@@ -459,48 +440,55 @@
                     <!-- Dados Pessoais -->
                     <div class="lg:col-span-2">
                         <label class="label-custom required">Nome Completo:</label>
-                        <input type="text" id="nome_${socioCounter}" name="socios[${socioCounter}][nome]" 
+                        <input type="text" id="nome_${pessoaCounter}" name="pessoas[${pessoaCounter}][nome]" 
                                class="input-custom mt-1 block w-full rounded-lg p-3" 
                                placeholder="Digite o nome completo" required>
                     </div>
                     
                     <div>
                         <label class="label-custom required">CPF:</label>
-                        <input type="text" id="cpf_${socioCounter}" name="socios[${socioCounter}][cpf]" 
+                        <input type="text" id="cpf_${pessoaCounter}" name="pessoas[${pessoaCounter}][cpf]" 
                                class="input-custom mt-1 block w-full rounded-lg p-3 cpf-input" 
-                               placeholder="000.000.000-00" required>
+                               placeholder="000.000.000-00" maxlength="14" required>
                     </div>
                     
                     <div>
                         <label class="label-custom">RG:</label>
-                        <input type="text" id="rg_${socioCounter}" name="socios[${socioCounter}][rg]" 
+                        <input type="text" id="rg_${pessoaCounter}" name="pessoas[${pessoaCounter}][rg]" 
                                class="input-custom mt-1 block w-full rounded-lg p-3" 
                                placeholder="Digite o RG">
                     </div>
                     
                     <div>
                         <label class="label-custom">Órgão Expedidor:</label>
-                        <input type="text" id="orgao_${socioCounter}" name="socios[${socioCounter}][orgao]" 
+                        <input type="text" id="orgao_${pessoaCounter}" name="pessoas[${pessoaCounter}][orgao]" 
                                class="input-custom mt-1 block w-full rounded-lg p-3" 
                                placeholder="Ex: SSP/RS">
                     </div>
                     
                     <div>
                         <label class="label-custom required">Data de Nascimento:</label>
-                        <input type="date" id="nascimento_${socioCounter}" name="socios[${socioCounter}][nascimento]" 
+                        <input type="date" id="nascimento_${pessoaCounter}" name="pessoas[${pessoaCounter}][nascimento]" 
                                class="input-custom mt-1 block w-full rounded-lg p-3" required>
                     </div>
                     
                     <div>
                         <label class="label-custom">Nacionalidade:</label>
-                        <input type="text" id="nacionalidade_${socioCounter}" name="socios[${socioCounter}][nacionalidade]" 
+                        <input type="text" id="nacionalidade_${pessoaCounter}" name="pessoas[${pessoaCounter}][nacionalidade]" 
                                class="input-custom mt-1 block w-full rounded-lg p-3" 
                                value="Brasileira" placeholder="Nacionalidade">
                     </div>
                     
                     <div>
+                        <label class="label-custom">Naturalidade:</label>
+                        <input type="text" id="naturalidade_${pessoaCounter}" name="pessoas[${pessoaCounter}][naturalidade]" 
+                               class="input-custom mt-1 block w-full rounded-lg p-3" 
+                               placeholder="Cidade/UF de nascimento">
+                    </div>
+                    
+                    <div>
                         <label class="label-custom">Estado Civil:</label>
-                        <select id="estado_civil_${socioCounter}" name="socios[${socioCounter}][estado_civil]" 
+                        <select id="estado_civil_${pessoaCounter}" name="pessoas[${pessoaCounter}][estado_civil]" 
                                 class="input-custom mt-1 block w-full rounded-lg p-3">
                             <option value="">Selecione</option>
                             <option value="Solteiro(a)">Solteiro(a)</option>
@@ -513,9 +501,30 @@
                     
                     <div>
                         <label class="label-custom">Profissão:</label>
-                        <input type="text" id="profissao_${socioCounter}" name="socios[${socioCounter}][profissao]" 
+                        <input type="text" id="profissao_${pessoaCounter}" name="pessoas[${pessoaCounter}][profissao]" 
                                class="input-custom mt-1 block w-full rounded-lg p-3" 
                                placeholder="Digite a profissão">
+                    </div>
+                    
+                    <!-- Contato -->
+                    <div class="lg:col-span-3 mt-4">
+                        <h4 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                            📞 Contato
+                        </h4>
+                    </div>
+                    
+                    <div>
+                        <label class="label-custom">Celular:</label>
+                        <input type="text" id="celular_${pessoaCounter}" name="pessoas[${pessoaCounter}][celular]" 
+                               class="input-custom mt-1 block w-full rounded-lg p-3 celular-input" 
+                               placeholder="(00) 00000-0000" maxlength="15">
+                    </div>
+                    
+                    <div class="lg:col-span-2">
+                        <label class="label-custom">E-mail:</label>
+                        <input type="email" id="email_${pessoaCounter}" name="pessoas[${pessoaCounter}][email]" 
+                               class="input-custom mt-1 block w-full rounded-lg p-3" 
+                               placeholder="exemplo@email.com">
                     </div>
                     
                     <!-- Endereço -->
@@ -527,49 +536,49 @@
                     
                     <div>
                         <label class="label-custom">CEP:</label>
-                        <input type="text" id="cep_${socioCounter}" name="socios[${socioCounter}][cep]" 
+                        <input type="text" id="cep_${pessoaCounter}" name="pessoas[${pessoaCounter}][cep]" 
                                class="input-custom mt-1 block w-full rounded-lg p-3 cep-input" 
-                               placeholder="00000-000" data-socio="${socioCounter}">
+                               placeholder="00000-000" maxlength="9" data-pessoa="${pessoaCounter}">
                     </div>
                     
                     <div class="lg:col-span-2">
                         <label class="label-custom">Logradouro:</label>
-                        <input type="text" id="logradouro_${socioCounter}" name="socios[${socioCounter}][logradouro]" 
+                        <input type="text" id="logradouro_${pessoaCounter}" name="pessoas[${pessoaCounter}][logradouro]" 
                                class="input-custom mt-1 block w-full rounded-lg p-3" 
                                placeholder="Digite o logradouro">
                     </div>
                     
                     <div>
                         <label class="label-custom">Número:</label>
-                        <input type="text" id="numero_${socioCounter}" name="socios[${socioCounter}][numero]" 
+                        <input type="text" id="numero_${pessoaCounter}" name="pessoas[${pessoaCounter}][numero]" 
                                class="input-custom mt-1 block w-full rounded-lg p-3" 
                                placeholder="Nº">
                     </div>
                     
                     <div>
                         <label class="label-custom">Complemento:</label>
-                        <input type="text" id="complemento_${socioCounter}" name="socios[${socioCounter}][complemento]" 
+                        <input type="text" id="complemento_${pessoaCounter}" name="pessoas[${pessoaCounter}][complemento]" 
                                class="input-custom mt-1 block w-full rounded-lg p-3" 
                                placeholder="Apto, sala, etc">
                     </div>
                     
                     <div>
                         <label class="label-custom">Bairro:</label>
-                        <input type="text" id="bairro_${socioCounter}" name="socios[${socioCounter}][bairro]" 
+                        <input type="text" id="bairro_${pessoaCounter}" name="pessoas[${pessoaCounter}][bairro]" 
                                class="input-custom mt-1 block w-full rounded-lg p-3" 
                                placeholder="Digite o bairro">
                     </div>
                     
                     <div>
                         <label class="label-custom">Município:</label>
-                        <input type="text" id="municipio_${socioCounter}" name="socios[${socioCounter}][municipio]" 
+                        <input type="text" id="municipio_${pessoaCounter}" name="pessoas[${pessoaCounter}][municipio]" 
                                class="input-custom mt-1 block w-full rounded-lg p-3" 
                                placeholder="Digite o município">
                     </div>
                     
                     <div>
                         <label class="label-custom">UF:</label>
-                        <select id="uf_${socioCounter}" name="socios[${socioCounter}][uf]" 
+                        <select id="uf_${pessoaCounter}" name="pessoas[${pessoaCounter}][uf]" 
                                 class="input-custom mt-1 block w-full rounded-lg p-3">
                             <option value="">Selecione</option>
                             <option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option>
@@ -583,72 +592,42 @@
                             <option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option>
                         </select>
                     </div>
-                    
-                    <!-- Dados Societários -->
-                    <div class="lg:col-span-3 mt-4">
-                        <h4 class="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                            💼 Dados Societários
-                        </h4>
-                    </div>
-                    
-                    <div>
-                        <label class="label-custom required">Função na Empresa:</label>
-                        <select id="funcao_${socioCounter}" name="socios[${socioCounter}][funcao]" 
-                                class="input-custom mt-1 block w-full rounded-lg p-3" required>
-                            <option value="">Selecione</option>
-                            <option value="socio">Sócio</option>
-                            <option value="socio_administrador">Sócio Administrador</option>
-                            <option value="titular">Titular (para EI)</option>
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label class="label-custom required">Quantidade de Quotas:</label>
-                        <input type="number" id="quotas_${socioCounter}" name="socios[${socioCounter}][quotas]" 
-                               class="input-custom mt-1 block w-full rounded-lg p-3" 
-                               placeholder="0" min="1" required>
-                    </div>
-                    
-                    <div>
-                        <label class="label-custom required">Valor Total (R$):</label>
-                        <input type="number" id="valor_${socioCounter}" name="socios[${socioCounter}][valor]" 
-                               class="input-custom mt-1 block w-full rounded-lg p-3" 
-                               placeholder="0,00" step="0.01" min="0" required>
-                    </div>
                 </div>
             `;
             
-            container.appendChild(socioDiv);
+            container.appendChild(pessoaDiv);
             
             // Preencher dados se fornecidos
             if (Object.keys(dados).length > 0) {
                 Object.entries(dados).forEach(([key, value]) => {
-                    const field = socioDiv.querySelector(`[id$="_${socioCounter}"][id*="${key}"]`);
+                    const field = document.getElementById(`${key}_${pessoaCounter}`);
                     if (field) field.value = value;
                 });
             }
             
             // Adicionar eventos
-            adicionarEventosSocio(socioCounter);
+            adicionarEventosPessoa(pessoaCounter);
             atualizarContador();
         }
 
-        function removerSocio(id) {
-            const socioDiv = document.getElementById(`socio-${id}`);
-            if (socioDiv) {
-                socioDiv.style.animation = 'slideOut 0.3s ease';
+        function removerPessoa(id) {
+            const pessoaDiv = document.getElementById(`pessoa-${id}`);
+            if (pessoaDiv) {
+                pessoaDiv.style.animation = 'slideOut 0.3s ease';
                 setTimeout(() => {
-                    socioDiv.remove();
+                    pessoaDiv.remove();
                     atualizarContador();
                 }, 300);
             }
         }
 
-        function adicionarEventosSocio(socioId) {
+        function adicionarEventosPessoa(pessoaId) {
             // CPF
-            const cpfInput = document.getElementById(`cpf_${socioId}`);
-            cpfInput.addEventListener('blur', function() {
+            const cpfInput = document.getElementById(`cpf_${pessoaId}`);
+            cpfInput.addEventListener('input', function() {
                 this.value = formatarCPF(this.value);
+            });
+            cpfInput.addEventListener('blur', function() {
                 if (this.value && !validarCPF(this.value)) {
                     showMessage('CPF inválido!');
                     this.style.borderColor = 'var(--error)';
@@ -658,12 +637,20 @@
             });
 
             // CEP
-            const cepInput = document.getElementById(`cep_${socioId}`);
-            cepInput.addEventListener('blur', function() {
+            const cepInput = document.getElementById(`cep_${pessoaId}`);
+            cepInput.addEventListener('input', function() {
                 this.value = formatarCEP(this.value);
+            });
+            cepInput.addEventListener('blur', function() {
                 if (this.value.length === 9) {
-                    buscarCEP(this.value, socioId);
+                    buscarCEP(this.value, pessoaId);
                 }
+            });
+
+            // Celular
+            const celularInput = document.getElementById(`celular_${pessoaId}`);
+            celularInput.addEventListener('input', function() {
+                this.value = formatarCelular(this.value);
             });
         }
 
@@ -671,32 +658,34 @@
         // GERAÇÃO DA MENSAGEM
         // =================================================================
         function gerarMensagem() {
-            const formData = new FormData(document.getElementById('formularioSocios'));
-            let mensagem = '*👥 DADOS DOS SÓCIOS*\n\n';
+            let mensagem = '*📋 DADOS DO CADASTRO*\n\n';
             
-            const socios = document.querySelectorAll('.socio-card');
-            socios.forEach((socioCard, index) => {
-                const socioNum = index + 1;
-                const socioId = socioCard.id.split('-')[1];
+            const pessoas = document.querySelectorAll('.pessoa-card');
+            pessoas.forEach((pessoaCard, index) => {
+                const pessoaNum = index + 1;
+                const pessoaId = pessoaCard.id.split('-')[1];
                 
-                mensagem += `*Sócio ${socioNum}:*\n`;
-                mensagem += `Nome: ${document.getElementById(`nome_${socioId}`).value || 'Não informado'}\n`;
-                mensagem += `CPF: ${document.getElementById(`cpf_${socioId}`).value || 'Não informado'}\n`;
-                mensagem += `RG: ${document.getElementById(`rg_${socioId}`).value || 'Não informado'}\n`;
-                mensagem += `Órgão: ${document.getElementById(`orgao_${socioId}`).value || 'Não informado'}\n`;
-                mensagem += `Nascimento: ${document.getElementById(`nascimento_${socioId}`).value || 'Não informado'}\n`;
-                mensagem += `Nacionalidade: ${document.getElementById(`nacionalidade_${socioId}`).value || 'Não informado'}\n`;
-                mensagem += `Estado Civil: ${document.getElementById(`estado_civil_${socioId}`).value || 'Não informado'}\n`;
-                mensagem += `Profissão: ${document.getElementById(`profissao_${socioId}`).value || 'Não informado'}\n`;
+                mensagem += `*Pessoa ${pessoaNum}:*\n`;
+                mensagem += `Nome: ${document.getElementById(`nome_${pessoaId}`).value || 'Não informado'}\n`;
+                mensagem += `CPF: ${document.getElementById(`cpf_${pessoaId}`).value || 'Não informado'}\n`;
+                mensagem += `RG: ${document.getElementById(`rg_${pessoaId}`).value || 'Não informado'}\n`;
+                mensagem += `Órgão: ${document.getElementById(`orgao_${pessoaId}`).value || 'Não informado'}\n`;
+                mensagem += `Nascimento: ${document.getElementById(`nascimento_${pessoaId}`).value || 'Não informado'}\n`;
+                mensagem += `Nacionalidade: ${document.getElementById(`nacionalidade_${pessoaId}`).value || 'Não informado'}\n`;
+                mensagem += `Naturalidade: ${document.getElementById(`naturalidade_${pessoaId}`).value || 'Não informado'}\n`;
+                mensagem += `Estado Civil: ${document.getElementById(`estado_civil_${pessoaId}`).value || 'Não informado'}\n`;
+                mensagem += `Profissão: ${document.getElementById(`profissao_${pessoaId}`).value || 'Não informado'}\n`;
+                mensagem += `Celular: ${document.getElementById(`celular_${pessoaId}`).value || 'Não informado'}\n`;
+                mensagem += `E-mail: ${document.getElementById(`email_${pessoaId}`).value || 'Não informado'}\n`;
                 
                 // Endereço
-                const logradouro = document.getElementById(`logradouro_${socioId}`).value;
-                const numero = document.getElementById(`numero_${socioId}`).value;
-                const complemento = document.getElementById(`complemento_${socioId}`).value;
-                const bairro = document.getElementById(`bairro_${socioId}`).value;
-                const municipio = document.getElementById(`municipio_${socioId}`).value;
-                const uf = document.getElementById(`uf_${socioId}`).value;
-                const cep = document.getElementById(`cep_${socioId}`).value;
+                const logradouro = document.getElementById(`logradouro_${pessoaId}`).value;
+                const numero = document.getElementById(`numero_${pessoaId}`).value;
+                const complemento = document.getElementById(`complemento_${pessoaId}`).value;
+                const bairro = document.getElementById(`bairro_${pessoaId}`).value;
+                const municipio = document.getElementById(`municipio_${pessoaId}`).value;
+                const uf = document.getElementById(`uf_${pessoaId}`).value;
+                const cep = document.getElementById(`cep_${pessoaId}`).value;
                 
                 if (logradouro || numero || bairro) {
                     mensagem += `Endereço: ${logradouro}, ${numero}${complemento ? ', ' + complemento : ''}\n`;
@@ -704,9 +693,6 @@
                     mensagem += `CEP: ${cep || 'Não informado'}\n`;
                 }
                 
-                mensagem += `Função: ${document.getElementById(`funcao_${socioId}`).value || 'Não informado'}\n`;
-                mensagem += `Quotas: ${document.getElementById(`quotas_${socioId}`).value || '0'}\n`;
-                mensagem += `Valor: R$ ${document.getElementById(`valor_${socioId}`).value || '0,00'}\n`;
                 mensagem += '\n';
             });
             
@@ -720,25 +706,25 @@
         // EVENTOS
         // =================================================================
         document.addEventListener('DOMContentLoaded', function() {
-            // Adicionar primeiro sócio
-            adicionarSocio();
+            // Adicionar primeira pessoa
+            adicionarPessoa();
             
             // Botão adicionar
-            document.getElementById('addSocio').addEventListener('click', () => {
-                adicionarSocio();
-                showMessage('Sócio adicionado com sucesso!', 'success');
+            document.getElementById('addPessoa').addEventListener('click', () => {
+                adicionarPessoa();
+                showMessage('Pessoa adicionada com sucesso!', 'success');
             });
             
             // Botão remover
-            document.getElementById('removeSocio').addEventListener('click', () => {
-                const socios = document.querySelectorAll('.socio-card');
-                if (socios.length > 1) {
-                    const lastSocio = socios[socios.length - 1];
-                    const socioId = lastSocio.id.split('-')[1];
-                    removerSocio(socioId);
-                    showMessage('Sócio removido!', 'success');
+            document.getElementById('removePessoa').addEventListener('click', () => {
+                const pessoas = document.querySelectorAll('.pessoa-card');
+                if (pessoas.length > 1) {
+                    const lastPessoa = pessoas[pessoas.length - 1];
+                    const pessoaId = lastPessoa.id.split('-')[1];
+                    removerPessoa(pessoaId);
+                    showMessage('Pessoa removida!', 'success');
                 } else {
-                    showMessage('Deve haver pelo menos 1 sócio!');
+                    showMessage('Deve haver pelo menos 1 pessoa!');
                 }
             });
             
@@ -747,7 +733,7 @@
             
             // Enviar WhatsApp
             document.getElementById('enviarWhatsApp').addEventListener('click', function() {
-                const form = document.getElementById('formularioSocios');
+                const form = document.getElementById('formularioCadastro');
                 
                 if (!form.checkValidity()) {
                     form.reportValidity();
@@ -780,63 +766,53 @@
         // MODO TESTE
         // =================================================================
         function preencherTeste() {
-            document.getElementById('sociosContainer').innerHTML = '';
-            socioCounter = 0;
+            document.getElementById('pessoasContainer').innerHTML = '';
+            pessoaCounter = 0;
             
-            // Sócio 1
-            adicionarSocio({
+            // Pessoa 1
+            adicionarPessoa({
                 nome: 'João Silva Santos',
                 cpf: '123.456.789-00',
                 rg: '1234567890',
                 orgao: 'SSP/RS',
                 nascimento: '1980-05-15',
                 nacionalidade: 'Brasileira',
+                naturalidade: 'Porto Alegre/RS',
                 estado_civil: 'Solteiro(a)',
                 profissao: 'Empresário',
+                celular: '(51) 99999-8888',
+                email: 'joao.silva@email.com',
                 cep: '90000-000',
                 logradouro: 'Rua das Palmeiras',
                 numero: '456',
                 bairro: 'Centro',
                 municipio: 'Porto Alegre',
-                uf: 'RS',
-                funcao: 'socio_administrador',
-                quotas: '6000',
-                valor: '6000'
+                uf: 'RS'
             });
             
-            // Sócio 2
-            adicionarSocio({
+            // Pessoa 2
+            adicionarPessoa({
                 nome: 'Maria Oliveira Costa',
                 cpf: '987.654.321-00',
                 rg: '0987654321',
                 orgao: 'SSP/RS',
                 nascimento: '1985-08-20',
                 nacionalidade: 'Brasileira',
+                naturalidade: 'Santa Maria/RS',
                 estado_civil: 'Casado(a)',
                 profissao: 'Advogada',
+                celular: '(51) 98888-7777',
+                email: 'maria.costa@email.com',
                 cep: '91000-000',
                 logradouro: 'Avenida Brasil',
                 numero: '123',
                 bairro: 'Centro',
                 municipio: 'Porto Alegre',
-                uf: 'RS',
-                funcao: 'socio',
-                quotas: '4000',
-                valor: '4000'
+                uf: 'RS'
             });
             
             showMessage('Dados de teste preenchidos!', 'success');
         }
-        
-        // Adicionar animação de saída
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideOut {
-                from { opacity: 1; transform: translateX(0); }
-                to { opacity: 0; transform: translateX(100px); }
-            }
-        `;
-        document.head.appendChild(style);
     </script>
 </body>
 </html>
